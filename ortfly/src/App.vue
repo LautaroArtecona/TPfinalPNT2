@@ -1,23 +1,38 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import LoginModal from './components/LoginModal.vue' // Importamos el modal
 
 const router = useRouter()
 const menuAbierto = ref(false)
+
+// Estados para controlar el modal
+const modalAbierto = ref(false)
+const rolSeleccionado = ref('cliente')
 
 const toggleMenu = () => {
   menuAbierto.value = !menuAbierto.value
 }
 
-const simularLogin = (rol) => {
+// Abre el modal configurando el rol correspondiente
+const abrirLogin = (rol) => {
   menuAbierto.value = false
+  rolSeleccionado.value = rol
+  modalAbierto.value = true
+}
+
+const cerrarModal = () => {
+  modalAbierto.value = false
+}
+
+const manejarLoginExitoso = (rol) => {
+  modalAbierto.value = false
   if (rol === 'admin') {
-    // Cambiar las rutas segun corresponda
-    router.push('/') 
-    alert('Simulación: Logueado como Administrador')
+    alert('¡Login Exitoso! Entrando al entorno de Administrador.')
+    // Próximamente: router.push('/admin/dashboard')
   } else {
-    router.push('/')
-    alert('Simulación: Logueado como Cliente')
+    alert('¡Login Exitoso! Entrando al entorno de Cliente.')
+    // Próximamente: router.push('/cliente/viajes')
   }
 }
 </script>
@@ -34,8 +49,8 @@ const simularLogin = (rol) => {
       </button>
       
       <div v-if="menuAbierto" class="dropdown-menu">
-        <button @click="simularLogin('cliente')">🔑 Entrar como Cliente</button>
-        <button @click="simularLogin('admin')">🛠️ Entrar como Admin</button>
+        <button @click="abrirLogin('cliente')">🔑 Entrar como Cliente</button>
+        <button @click="abrirLogin('admin')">🛠️ Entrar como Admin</button>
       </div>
     </div>
   </header>
@@ -43,4 +58,11 @@ const simularLogin = (rol) => {
   <main class="main-content">
     <RouterView />
   </main>
+
+  <LoginModal 
+    :mostrar="modalAbierto" 
+    :rol="rolSeleccionado" 
+    @cerrar="cerrarModal" 
+    @loginExitoso="manejarLoginExitoso"
+  />
 </template>
