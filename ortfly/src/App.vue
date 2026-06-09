@@ -28,11 +28,9 @@ const cerrarModal = () => {
 const manejarLoginExitoso = (rol) => {
   modalAbierto.value = false
   if (rol === 'admin') {
-    alert('¡Login Exitoso! Entrando al entorno de Administrador.')
-    // Próximamente: router.push('/admin/dashboard')
+    router.push('/admin')
   } else {
     router.push('/cliente')
-    // Próximamente: router.push('/cliente/viajes')
   }
 }
 </script>
