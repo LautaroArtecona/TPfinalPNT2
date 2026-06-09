@@ -31,7 +31,7 @@ const manejarLoginExitoso = (rol) => {
     alert('¡Login Exitoso! Entrando al entorno de Administrador.')
     // Próximamente: router.push('/admin/dashboard')
   } else {
-    alert('¡Login Exitoso! Entrando al entorno de Cliente.')
+    router.push('/cliente')
     // Próximamente: router.push('/cliente/viajes')
   }
 }
