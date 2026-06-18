@@ -1,13 +1,30 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { MOCKAPI_URL } from '../config/api' 
 
-// Datos mockeados solo para diseño visual
-const vuelosEjemplo = ref([
-  { id: 1, origen: 'Buenos Aires (EZE)', destino: 'Madrid (MAD)', fecha: '2026-07-15', hora: '13:45', precio: 1200, disponible: true },
-  { id: 2, origen: 'Buenos Aires (AEP)', destino: 'Bariloche (BRC)', fecha: '2026-07-18', hora: '08:20', precio: 150, disponible: true },
-  { id: 3, origen: 'Buenos Aires (EZE)', destino: 'Miami (MIA)', fecha: '2026-07-20', hora: '23:10', precio: 950, disponible: true },
-  { id: 4, origen: 'Buenos Aires (EZE)', destino: 'Rio de Janeiro (GIG)', fecha: '2026-07-22', hora: '11:00', precio: 300, disponible: false }
-])
+const vuelos = ref([])
+const cargando = ref(true)
+
+const obtenerVuelos = async () => {
+  try {
+    cargando.value = true
+    // traemos la api y combino con el endpoint
+    const respuesta = await fetch(`${MOCKAPI_URL}/vuelos`)
+
+    if (!respuesta.ok) throw new Error('Error al conectar con el servidor')
+    const datos = await respuesta.json()
+    
+    vuelos.value = datos
+  } catch (error) {
+    console.error('Error cargando vuelos:', error)
+  } finally {
+    cargando.value = false
+  }
+}
+
+onMounted(() => {
+  obtenerVuelos()
+})
 </script>
 
 <template>
@@ -34,12 +51,16 @@ const vuelosEjemplo = ref([
     <section class="flights-section">
       <h3>Vuelos Disponibles</h3>
       
-      <div class="flights-grid">
+      <div v-if="cargando" style="text-align: center; padding: 2rem; color: #64748b;">
+        ⏳ Cargando itinerarios en tiempo real...
+      </div>
+
+      <div v-else class="flights-grid">
         <div 
-          v-for="vuelo in vuelosEjemplo" 
+          v-for="vuelo in vuelos" 
           :key="vuelo.id" 
           class="flight-card"
-          :class="{ 'sold-out': !vuelo.disponible }"
+          :class="{ 'sold-out': vuelo.estado === 'Cancelado' }"
         >
           <div class="flight-route">
             <div>
@@ -48,18 +69,18 @@ const vuelosEjemplo = ref([
             </div>
             <div class="route-line">✈️</div>
             <div>
-              <p class="time">--:--</p>
+              <p class="time">{{vuelo.horaDestino}}</p>
               <p class="city">{{ vuelo.destino }}</p>
             </div>
           </div>
           
           <div class="flight-info">
-            <p class="date">📅 {{ vuelo.fecha }}</p>
+            <p class="date">📅 {{ new Date(vuelo.fecha).toLocaleDateString() }}</p>
             <p class="price">USD ${{ vuelo.precio }}</p>
           </div>
 
-          <button class="btn-book" :disabled="!vuelo.disponible">
-            {{ vuelo.disponible ? 'Seleccionar Vuelo' : 'Agotado' }}
+          <button class="btn-book" :disabled="vuelo.estado === 'Cancelado'">
+            {{ vuelo.estado === 'Activo' ? 'Seleccionar Vuelo' : 'Cancelado' }}
           </button>
         </div>
       </div>
