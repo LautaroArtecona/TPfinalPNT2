@@ -1,6 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { MOCKAPI_URL } from '../config/api'
+import { useAuthStore } from '../stores/auth'
+import VueloModal from '../components/VueloModal.vue'
+import RegisterAdminModal from '../components/RegisterAdminModal.vue'
+
+const authStore = useAuthStore()
 
 // Estados reactivos de datos
 const listaVuelos = ref([])
@@ -8,19 +13,12 @@ const cargando = ref(true)
 
 // Estados para controlar el Modal del Formulario (Alta/Modificación)
 const mostrarModalForm = ref(false)
-const editando = ref(false)
-const idVueloEditando = ref(null)
+const mostrarModalAdmin = ref(false)
 
-// Campos del formulario
-const form = ref({
-  origen: '',
-  destino: '',
-  fecha: '',
-  hora: '',
-  precio: 0,
-  capacidad: 150,
-  estado: 'Activo'
-})
+// Estados auxiliares para el abm de vuelos
+const editando = ref(false)
+const vueloSeleccionado = ref(null)
+
 
 // OBTENER VUELOS 
 const obtenerVuelos = async () => {
@@ -36,63 +34,50 @@ const obtenerVuelos = async () => {
   }
 }
 
-// Abrir modal para Crear 
+// Abrir modal para Editar 
 const abrirCrear = () => {
   editando.value = false
-  idVueloEditando.value = null
-  form.value = { 
-    origen: '', 
-    destino: '', 
-    fecha: '', 
-    hora: '', 
-    horaDestino: '', // 👈 Agregamos esto
-    precio: 100, 
-    capacidad: 150, 
-    estado: 'Activo' 
-  }
+  vueloSeleccionado.value = null
   mostrarModalForm.value = true
 }
 
-// Abrir modal para Editar 
 const abrirEditar = (vuelo) => {
   editando.value = true
-  idVueloEditando.value = vuelo.id
-  // Clonamos los datos actuales en el formulario
-  form.value = { ...vuelo }
+  vueloSeleccionado.value = vuelo
   mostrarModalForm.value = true
 }
 
-// GUARDAR DATOS (Alta con POST o Modificación con PUT)
-const guardarVuelo = async () => {
+
+// GUARDAR O ACTUALIZAR VUELO (Recibe los datos desde el componente VueloModal)
+const manejarGuardarVuelo = async (datosFormulario) => {
   try {
     let url = `${MOCKAPI_URL}/vuelos`
     let metodo = 'POST'
 
     if (editando.value) {
-      url = `${MOCKAPI_URL}/vuelos/${idVueloEditando.value}`
+      url = `${MOCKAPI_URL}/vuelos/${vueloSeleccionado.value.id}`
       metodo = 'PUT'
     }
 
     const respuesta = await fetch(url, {
       method: metodo,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
+      body: JSON.stringify(datosFormulario)
     })
 
     if (!respuesta.ok) throw new Error('Error al guardar el vuelo')
     
     mostrarModalForm.value = false
-    obtenerVuelos() // Recargamos la lista en tiempo real
+    obtenerVuelos()
   } catch (error) {
     alert(error.message)
   }
 }
 
-// BAJA LÓGICA (Alternar entre Activo y Cancelado con PUT)
+// CAMBIAR ESTADO (Baja lógica)
 const cambiarEstadoVuelo = async (vuelo) => {
   try {
     const nuevoEstado = vuelo.estado === 'Activo' ? 'Cancelado' : 'Activo'
-    
     const respuesta = await fetch(`${MOCKAPI_URL}/vuelos/${vuelo.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -100,7 +85,7 @@ const cambiarEstadoVuelo = async (vuelo) => {
     })
 
     if (!respuesta.ok) throw new Error('Error al actualizar el estado')
-    obtenerVuelos() // Recarga la grilla
+    obtenerVuelos()
   } catch (error) {
     alert(error.message)
   }
@@ -119,7 +104,10 @@ onMounted(() => {
         <h2>Panel de Control</h2>
         <p class="admin-subtitle">Gestión en tiempo real de itinerarios y métricas operativas.</p>
       </div>
-      <button class="btn-create" @click="abrirCrear">➕ Crear Nuevo Vuelo</button>
+      <div class="admin-header-buttons-container">
+        <button class="btn-create btn-register-admin" @click="mostrarModalAdmin = true">👤 Registrar Admin</button>
+        <button class="btn-create" @click="abrirCrear">➕ Crear Nuevo Vuelo</button>
+      </div>
     </div>
 
     <section class="metrics-grid">
@@ -160,6 +148,14 @@ onMounted(() => {
       </div>
       <div class="panel-box">
         <h3>Información Operativa</h3>
+        <div class="admin-profile-box">
+          <p class="admin-profile-text">
+            <strong>Administrador:</strong> {{ authStore.usuario?.nombre || 'Administrador Global' }}
+          </p>
+          <p class="admin-profile-subtext">
+            <strong>Email:</strong> {{ authStore.usuario?.email || 'admin@ortfly.com' }}
+          </p>
+        </div>
         <p class="admin-sync-text">Sincronizado con MockAPI cloud de manera exitosa.</p>
       </div>
     </section>
@@ -208,50 +204,18 @@ onMounted(() => {
       </div>
     </section>
 
-    <div v-if="mostrarModalForm" class="modal-overlay" @click.self="mostrarModalForm = false">
-      <div class="modal-container modal-container-admin">
-        <button class="modal-close" @click="mostrarModalForm = false">✕</button>
-        <h2>{{ editando ? '📝 Modificar Vuelo' : '➕ Registrar Nuevo Vuelo' }}</h2>
-        <p class="modal-subtitle">Completá la información del itinerario de viaje.</p>
+    <VueloModal 
+      :mostrar="mostrarModalForm"
+      :editando="editando"
+      :vueloData="vueloSeleccionado"
+      @cerrar="mostrarModalForm = false"
+      @guardar="manejarGuardarVuelo"
+    />
 
-        <form @submit.prevent="guardarVuelo" class="modal-form">
-          <div class="admin-form-grid">
-            <div class="form-group">
-              <label>Origen</label>
-              <input type="text" v-model="form.origen" required placeholder="Ej: Buenos Aires" />
-            </div>
-            <div class="form-group">
-              <label>Destino</label>
-              <input type="text" v-model="form.destino" required placeholder="Ej: Madrid" />
-            </div>
-            <div class="form-group">
-              <label>Fecha</label>
-              <input type="date" v-model="form.fecha" required />
-            </div>
-            <div class="form-group">
-              <label>Hora Salida</label>
-              <input type="time" v-model="form.hora" required />
-            </div>
-            <div class="form-group">
-              <label>Hora Llegada (Destino)</label>
-              <input type="time" v-model="form.horaDestino" required />
-            </div>
-            <div class="form-group">
-              <label>Precio (USD)</label>
-              <input type="number" v-model="form.precio" required min="1" />
-            </div>
-            <div class="form-group">
-              <label>Capacidad Pasajeros</label>
-              <input type="number" v-model="form.capacidad" required min="1" />
-            </div>
-          </div>
-
-          <button type="submit" class="btn-submit">
-            {{ editando ? 'Guardar Cambios' : 'Dar de Alta Vuelo' }}
-          </button>
-        </form>
-      </div>
-    </div>
+    <RegisterAdminModal 
+      :mostrar="mostrarModalAdmin"
+      @cerrar="mostrarModalAdmin = false"
+    />
 
   </div>
 </template>

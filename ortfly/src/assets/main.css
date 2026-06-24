@@ -792,3 +792,50 @@ body {
 .register-link:hover {
   text-decoration: underline;
 }
+
+/* PANEL ADMIN - VISTA GENERAL Y REGISTRO  */
+
+.admin-header-buttons-container {
+  display: flex; 
+  gap: 1rem;
+}
+
+.btn-register-admin {
+  background-color: #475569 !important;
+}
+
+.btn-register-admin:hover {
+  background-color: #334155 !important;
+}
+
+.admin-profile-box {
+  margin-top: 1rem; 
+  background-color: #f8fafc; 
+  padding: 1rem; 
+  border-radius: 8px; 
+  border: 1px solid #e2e8f0;
+}
+
+.admin-profile-text {
+  font-size: 0.9rem; 
+  margin-bottom: 0.4rem; 
+  color: #475569;
+}
+
+.admin-profile-subtext {
+  font-size: 0.85rem; 
+  color: #64748b;
+  margin: 0;
+}
+
+.modal-admin-small {
+  max-width: 450px;
+}
+
+.btn-admin-submit {
+  background-color: #0ea5e9 !important; 
+}
+
+.btn-admin-submit:hover {
+  background-color: #0284c7 !important;
+}
