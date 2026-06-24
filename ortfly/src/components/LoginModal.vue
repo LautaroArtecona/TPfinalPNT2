@@ -34,22 +34,22 @@ const handleSubmit = async () => {
       throw new Error('El correo electrónico no está registrado.')
     }
 
-    const usuario = usuariosEncontrados[0]
+    const usuarioLogueado = usuariosEncontrados[0]
 
     // Validamos que la contraseña coincida
-    if (usuario.password !== password.value) {
+    if (usuarioLogueado.password !== password.value) {
       throw new Error('Contraseña incorrecta.')
     }
 
     // Validamos que el rol del usuario coincida con el tipo de login seleccionado
-    if (usuario.rol !== props.rol) {
+    if (usuarioLogueado.rol !== props.rol) {
       throw new Error(`Este usuario no tiene permisos de ${props.rol === 'admin' ? 'Administrador' : 'Cliente'}.`)
     }
 
     // Si todo está ok, guardamos en Pinia y avisamos al componente
-    authStore.login(usuario, usuario.rol)
-    emit('loginExitoso', usuario.rol)
-    
+    authStore.login(usuarioLogueado, usuarioLogueado.rol)
+    emit('loginExitoso', usuarioLogueado.rol)
+
     // Limpiamos formulario
     email.value = ''
     password.value = ''
