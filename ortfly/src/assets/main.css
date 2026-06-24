@@ -244,6 +244,25 @@ body {
 
 /* MODAL DE LOGIN  */
 
+.modal-error {
+  background-color: #fee2e2; /* Fondo rojo clarito */
+  color: #991b1b;            /* Texto rojo oscuro */
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid #fca5a5;
+  animation: shake 0.2s ease-in-out 0s 2; /* Un pequeño efecto de vibración visual */
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
