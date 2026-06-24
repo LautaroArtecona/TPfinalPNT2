@@ -1,13 +1,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import LoginModal from './components/LoginModal.vue' // Importamos el modal
+import LoginModal from './components/LoginModal.vue'
+import RegisterModal from './components/RegisterModal.vue'
 
 const router = useRouter()
 const menuAbierto = ref(false)
 
 // Estados para controlar el modal
 const modalAbierto = ref(false)
+const modalRegisterAbierto = ref(false)
 const rolSeleccionado = ref('cliente')
 
 const toggleMenu = () => {
@@ -18,6 +20,7 @@ const toggleMenu = () => {
 const abrirLogin = (rol) => {
   menuAbierto.value = false
   rolSeleccionado.value = rol
+  modalRegisterAbierto.value = false
   modalAbierto.value = true
 }
 
@@ -32,6 +35,16 @@ const manejarLoginExitoso = (rol) => {
   } else {
     router.push('/cliente')
   }
+}
+
+const saltarARegistro = () => {
+  modalAbierto.value = false
+  modalRegisterAbierto.value = true
+}
+
+const saltarALogin = () => {
+  modalRegisterAbierto.value = false
+  modalAbierto.value = true
 }
 </script>
 
@@ -62,5 +75,11 @@ const manejarLoginExitoso = (rol) => {
     :rol="rolSeleccionado" 
     @cerrar="cerrarModal" 
     @loginExitoso="manejarLoginExitoso"
+    @irARegistro="saltarARegistro"
+  />
+  <RegisterModal 
+    :mostrar="modalRegisterAbierto" 
+    @cerrar="modalRegisterAbierto = false" 
+    @irALogin="saltarALogin"
   />
 </template>

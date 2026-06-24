@@ -8,7 +8,7 @@ const props = defineProps({
   rol: String // 'cliente' o 'admin'
 })
 
-const emit = defineEmits(['cerrar', 'loginExitoso'])
+const emit = defineEmits(['cerrar', 'loginExitoso', 'irARegistro'])
 
 const authStore = useAuthStore() // Instanciamos Pinia
 
@@ -16,6 +16,7 @@ const email = ref('')
 const password = ref('')
 const errorMsg = ref('')
 const cargando = ref(false)
+
 
 const handleSubmit = async () => {
   errorMsg.value = ''
@@ -45,7 +46,7 @@ const handleSubmit = async () => {
       throw new Error(`Este usuario no tiene permisos de ${props.rol === 'admin' ? 'Administrador' : 'Cliente'}.`)
     }
 
-    // Si todo está ok, guardamos en Pinia y avisamos al componente padre
+    // Si todo está ok, guardamos en Pinia y avisamos al componente
     authStore.login(usuario, usuario.rol)
     emit('loginExitoso', usuario.rol)
     
@@ -93,9 +94,9 @@ const handleSubmit = async () => {
         </div>
 
         <div v-if="rol === 'cliente'" class="modal-actions">
-          <button type="button" class="modal-link" @click="alert('Simulación: Registro')">
+          <a href="#" v-if="rol === 'cliente'" @click.prevent="emit('irARegistro')" class="modal-link">
             Registrarse
-          </button>
+          </a>
           <button type="button" class="modal-link" @click="alert('Simulación: Recuperar clave')">
             ¿Olvidaste tu contraseña?
           </button>

@@ -1,21 +1,36 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import { VECTORSHIFT_URL, VECTORSHIFT_KEY } from '../config/api'
 
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Secciones de la navegación lateral
 const seccionActual = ref('viajes') 
 const filtroViajes = ref('activos') 
 
+// Datos Ficticios bien presentados para rellenar las pestañas
 const misViajes = ref([
-  { id: 101, destino: 'Madrid', fecha: '2026-07-15', estado: 'activo', asiento: '12F' },
-  { id: 102, destino: 'Bariloche', fecha: '2026-01-10', estado: 'pasado', asiento: '04A' }
+  { id: 101, destino: 'Madrid (MAD)', fecha: '15/07/2026', estado: 'activos', asiento: '12F', hora: '13:40', boarding: '12:55' },
+  { id: 102, destino: 'Miami (MIA)', fecha: '28/08/2026', estado: 'activos', asiento: '08C', hora: '22:30', boarding: '21:45' },
+  { id: 103, destino: 'Bariloche (BRC)', fecha: '10/01/2026', estado: 'pasados', asiento: '04A', hora: '08:15', boarding: 'Finalizado' },
+  { id: 104, destino: 'Mendoza (MDZ)', fecha: '05/04/2026', estado: 'pasados', asiento: '19D', hora: '11:05', boarding: 'Finalizado' }
 ])
 
+// Funcionalidad de Salida Segura
+const manejarLogout = () => {
+  authStore.logout()
+  router.push('/') 
+}
+
+// Lógica del Chat con el Asistente IA
 const mensajesChat = ref([
   { id: 1, text: "¡Hola! Soy tu asistente OrtFly IA. ¿A dónde te gustaría viajar hoy?", sender: 'ai' }
 ])
-
 const nuevoMensaje = ref('')
-const cargandoIA = ref(false) // Estado para deshabilitar el botón mientras la IA piensa
+const cargandoIA = ref(false)
 
 const enviarMensaje = async () => {
   if (!nuevoMensaje.value.trim() || cargandoIA.value) return
@@ -43,9 +58,7 @@ const enviarMensaje = async () => {
     if (!respuesta.ok) throw new Error('Error al conectar con la IA')
     
     const resultado = await respuesta.json()
-    console.log('Respuesta cruda de VectorShift:', resultado) 
-
-    const respuestaTexto = resultado.outputs?.respuesta_ia || resultado.respuesta_ia || "Disculpa, no pude procesar tu solicitud.";
+    const respuestaTexto = resultado.outputs?.respuesta_ia || resultado.respuesta_ia || "Disculpa, no pude procesar tu solicitud."
 
     mensajesChat.value.push({ id: Date.now(), text: respuestaTexto, sender: 'ai' })
 
@@ -64,8 +77,17 @@ const enviarMensaje = async () => {
 
 <template>
   <div class="client-container">
+    <!-- Menú Lateral Dinámico -->
     <aside class="sidebar">
-      <h3>Mi Perfil</h3>
+      <div class="user-profile-summary">
+        <h3>Mi Perfil</h3>
+        <!-- Consumimos de forma reactiva los datos del store de Pinia -->
+        <p class="user-name">👤 {{ authStore.usuario?.nombre || 'Pasajero OrtFly' }}</p>
+        <p class="user-email">✉️ {{ authStore.usuario?.email || 'sin-correo@ort.edu.ar' }}</p>
+      </div>
+      
+      <hr class="sidebar-divider" />
+
       <button 
         class="sidebar-btn" 
         :class="{ active: seccionActual === 'viajes' }"
@@ -80,12 +102,18 @@ const enviarMensaje = async () => {
       >
         ✨ Asistente IA
       </button>
-      <hr>
-      <button class="sidebar-btn" style="color: #ef4444;">🚪 Cerrar Sesión</button>
+      
+      <hr class="sidebar-divider" />
+      
+      <button class="sidebar-btn btn-logout" @click="manejarLogout">
+        🚪 Cerrar Sesión
+      </button>
     </aside>
+
 
     <section class="content-area">
       
+      <!-- SECCIÓN: MIS PASAJES -->
       <div v-if="seccionActual === 'viajes'" class="trips-section">
         <h2>Gestión de Mis Pasajes</h2>
         
@@ -102,24 +130,39 @@ const enviarMensaje = async () => {
             :class="{ active: filtroViajes === 'pasados' }"
             @click="filtroViajes = 'pasados'"
           >
-            Historial
+            Historial de Viajes
           </button>
         </div>
 
-        <div v-for="viaje in misViajes.filter(v => v.estado === filtroViajes)" :key="viaje.id" class="trip-card-client">
-          <div>
-            <p style="font-weight: bold; font-size: 1.1rem;">Destino: {{ viaje.destino }}</p>
-            <p style="color: #64748b;">Fecha: {{ viaje.fecha }} | Asiento: {{ viaje.asiento }}</p>
+        <!-- Renderizado de las tarjetas simuladas filtradas -->
+        <div class="trips-list-container">
+          <div 
+            v-for="viaje in misViajes.filter(v => v.estado === filtroViajes)" 
+            :key="viaje.id" 
+            class="trip-card-client"
+          >
+            <div class="trip-info">
+              <p class="trip-destination">Destino: {{ viaje.destino }}</p>
+              <p class="trip-details">
+                Fecha: {{ viaje.fecha }} | Horario: {{ viaje.hora }} hs | Asiento: <strong>{{ viaje.asiento }}</strong>
+              </p>
+            </div>
+            <span class="status-badge" :class="viaje.estado === 'activos' ? 'status-active' : 'status-past'">
+              {{ viaje.estado === 'activos' ? `Embarque ${viaje.boarding}` : 'Finalizado' }}
+            </span>
           </div>
-          <span class="status-badge" :class="viaje.estado === 'activo' ? 'status-active' : 'status-past'">
-            {{ viaje.estado }}
-          </span>
+          
+          <!-- Estado en caso de que un filtro quede vacío -->
+          <div v-if="misViajes.filter(v => v.estado === filtroViajes).length === 0" class="empty-trips">
+            No tienes itinerarios registrados en este apartado.
+          </div>
         </div>
       </div>
 
+      <!-- SECCIÓN: ASISTENTE INTELIGENTE -->
       <div v-if="seccionActual === 'ia'" class="ai-section">
         <h2>Asistente de Viajes Inteligente</h2>
-        <p style="margin-bottom: 1rem; color: #64748b;">Pregúntame sobre destinos, horas de vuelo o presupuestos.</p>
+        <p class="ai-subtitle">Pregúntame sobre destinos, horas de vuelo o presupuestos.</p>
         
         <div class="ai-container">
           <div class="chat-messages">
