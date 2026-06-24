@@ -116,7 +116,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- TARJETAS MÉTRICAS (Uso de tarjetas nativas de Bootstrap para evitar deformaciones) -->
+    <!-- TARJETAS MÉTRICAS  -->
     <section class="row g-3 mb-4">
       <div class="col-12 col-md-4">
         <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">

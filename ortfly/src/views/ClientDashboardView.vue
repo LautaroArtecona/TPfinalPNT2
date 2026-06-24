@@ -41,7 +41,7 @@ const enviarMensaje = async () => {
   
   try {
     cargandoIA.value = true
-    
+
     const respuesta = await fetch(VECTORSHIFT_URL, {
       method: 'POST',
       headers: {
@@ -76,115 +76,160 @@ const enviarMensaje = async () => {
 </script>
 
 <template>
-  <div class="client-container">
-    <!-- Menú Lateral Dinámico -->
-    <aside class="sidebar">
-      <div class="user-profile-summary">
-        <h3>Mi Perfil</h3>
-        <!-- Consumimos de forma reactiva los datos del store de Pinia -->
-        <p class="user-name">👤 {{ authStore.usuario?.nombre || 'Pasajero OrtFly' }}</p>
-        <p class="user-email">✉️ {{ authStore.usuario?.email || 'sin-correo@ort.edu.ar' }}</p>
-      </div>
+  <div class="container py-4">
+    
+    <div class="row g-4 align-items-start">
       
-      <hr class="sidebar-divider" />
+      <aside class="col-12 col-md-4 col-lg-3">
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4 d-flex flex-column justify-content-between h-100">
+            <div>
+              <h3 class="fs-5 fw-bold mb-3 text-dark border-bottom pb-2">Mi Perfil</h3>
+              
+              <div class="mb-4">
+                <div class="d-flex align-items-center gap-2 mb-2 text-dark fs-6">
+                  <span>👤</span>
+                  <span class="fw-semibold text-break">{{ authStore.usuario?.nombre || 'Pasajero OrtFly' }}</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 text-muted small text-break">
+                  <span>✉️</span>
+                  <span>{{ authStore.usuario?.email || 'sin-correo@ort.edu.ar' }}</span>
+                </div>
+              </div>
 
-      <button 
-        class="sidebar-btn" 
-        :class="{ active: seccionActual === 'viajes' }"
-        @click="seccionActual = 'viajes'"
-      >
-        ✈️ Mis Viajes
-      </button>
-      <button 
-        class="sidebar-btn" 
-        :class="{ active: seccionActual === 'ia' }"
-        @click="seccionActual = 'ia'"
-      >
-        ✨ Asistente IA
-      </button>
-      
-      <hr class="sidebar-divider" />
-      
-      <button class="sidebar-btn btn-logout" @click="manejarLogout">
-        🚪 Cerrar Sesión
-      </button>
-    </aside>
-
-
-    <section class="content-area">
-      
-      <!-- SECCIÓN: MIS PASAJES -->
-      <div v-if="seccionActual === 'viajes'" class="trips-section">
-        <h2>Gestión de Mis Pasajes</h2>
-        
-        <div class="trips-tabs">
-          <button 
-            class="tab-btn" 
-            :class="{ active: filtroViajes === 'activos' }"
-            @click="filtroViajes = 'activos'"
-          >
-            Próximos Viajes
-          </button>
-          <button 
-            class="tab-btn" 
-            :class="{ active: filtroViajes === 'pasados' }"
-            @click="filtroViajes = 'pasados'"
-          >
-            Historial de Viajes
-          </button>
-        </div>
-
-        <!-- Renderizado de las tarjetas simuladas filtradas -->
-        <div class="trips-list-container">
-          <div 
-            v-for="viaje in misViajes.filter(v => v.estado === filtroViajes)" 
-            :key="viaje.id" 
-            class="trip-card-client"
-          >
-            <div class="trip-info">
-              <p class="trip-destination">Destino: {{ viaje.destino }}</p>
-              <p class="trip-details">
-                Fecha: {{ viaje.fecha }} | Horario: {{ viaje.hora }} hs | Asiento: <strong>{{ viaje.asiento }}</strong>
-              </p>
+              <div class="d-flex flex-column gap-2 mb-4">
+                <button 
+                  class="btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-medium transition" 
+                  :class="seccionActual === 'viajes' ? 'btn-primary' : 'btn-light text-secondary'"
+                  @click="seccionActual = 'viajes'"
+                >
+                  <span>✈️</span> Mis Viajes
+                </button>
+                <button 
+                  class="btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-medium transition" 
+                  :class="seccionActual === 'ia' ? 'btn-primary' : 'btn-light text-secondary'"
+                  @click="seccionActual = 'ia'"
+                >
+                  <span>✨</span> Asistente IA
+                </button>
+              </div>
             </div>
-            <span class="status-badge" :class="viaje.estado === 'activos' ? 'status-active' : 'status-past'">
-              {{ viaje.estado === 'activos' ? `Embarque ${viaje.boarding}` : 'Finalizado' }}
-            </span>
-          </div>
-          
-          <!-- Estado en caso de que un filtro quede vacío -->
-          <div v-if="misViajes.filter(v => v.estado === filtroViajes).length === 0" class="empty-trips">
-            No tienes itinerarios registrados en este apartado.
-          </div>
-        </div>
-      </div>
 
-      <!-- SECCIÓN: ASISTENTE INTELIGENTE -->
-      <div v-if="seccionActual === 'ia'" class="ai-section">
-        <h2>Asistente de Viajes Inteligente</h2>
-        <p class="ai-subtitle">Pregúntame sobre destinos, horas de vuelo o presupuestos.</p>
-        
-        <div class="ai-container">
-          <div class="chat-messages">
-            <div v-for="msg in mensajesChat" :key="msg.id" class="message" :class="msg.sender">
-              {{ msg.text }}
-            </div>
-          </div>
-          <div class="chat-input-area">
-            <input 
-              v-model="nuevoMensaje" 
-              type="text" 
-              :placeholder="cargandoIA ? 'OrtFly IA está pensando...' : 'Ej: Quiero viajar 5 días con 1000 USD...'" 
-              :disabled="cargandoIA"
-              @keyup.enter="enviarMensaje"
-            />
-            <button class="btn-ai" :disabled="cargandoIA" @click="enviarMensaje">
-              {{ cargandoIA ? '...' : 'Enviar' }}
+            <button class="btn btn-outline-danger w-100 text-start d-flex align-items-center gap-2 px-3 py-2 mt-3" @click="manejarLogout">
+              <span>🚪</span> Cerrar Sesión
             </button>
           </div>
         </div>
-      </div>
+      </aside>
 
-    </section>
+      <main class="col-12 col-md-8 col-lg-9">
+        <div class="card shadow-sm border-0 p-4">
+          
+          <div v-if="seccionActual === 'viajes'">
+            <h2 class="fs-4 fw-bold text-dark mb-3">Gestión de Mis Pasajes</h2>
+            
+            <div class="mb-4">
+              <ul class="nav nav-tabs border-bottom-0">
+                <li class="nav-item">
+                  <button 
+                    class="nav-link border-0 px-3 pb-2 transition" 
+                    :class="filtroViajes === 'activos' ? 'active fw-bold border-bottom border-3 border-primary text-primary' : 'text-muted'"
+                    style="background: none;"
+                    @click="filtroViajes = 'activos'"
+                  >
+                    Próximos Viajes
+                  </button>
+                </li>
+                <li class="nav-item">
+                  <button 
+                    class="nav-link border-0 px-3 pb-2 transition" 
+                    :class="filtroViajes === 'pasados' ? 'active fw-bold border-bottom border-3 border-primary text-primary' : 'text-muted'"
+                    style="background: none;"
+                    @click="filtroViajes = 'pasados'"
+                  >
+                    Historial de Viajes
+                  </button>
+                </li>
+              </ul>
+              <div class="border-bottom w-100" style="margin-top: -1px;"></div>
+            </div>
+
+            <div class="row row-cols-1 row-cols-lg-2 g-3">
+              <div 
+                v-for="viaje in misViajes.filter(v => v.estado === filtroViajes)" 
+                :key="viaje.id" 
+                class="col"
+              >
+                <div class="card h-100 border rounded p-3 bg-white shadow-none hover-shadow transition">
+                  <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <div>
+                      <span class="text-muted small d-block fw-bold text-uppercase" style="font-size: 0.75rem;">Destino:</span>
+                      <h4 class="fs-5 fw-bold text-dark m-0">{{ viaje.destino }}</h4>
+                    </div>
+                    <span 
+                      class="badge rounded px-2 py-1 small border" 
+                      :class="viaje.estado === 'activos' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-secondary-subtle text-secondary border-secondary-subtle'"
+                    >
+                      {{ viaje.estado === 'activos' ? `Embarque ${viaje.boarding}` : 'Finalizado' }}
+                    </span>
+                  </div>
+                  
+                  <div class="text-muted small pt-2 border-top mt-2">
+                    <p class="mb-1"><strong>Fecha:</strong> {{ viaje.fecha }}</p>
+                    <p class="mb-1"><strong>Horario:</strong> {{ viaje.hora }} hs</p>
+                    <p class="m-0"><strong>Asiento:</strong> <span class="text-dark fw-bold">{{ viaje.asiento }}</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="misViajes.filter(v => v.estado === filtroViajes).length === 0" class="alert alert-light text-center py-4 border text-muted mt-3">
+              <span>📂</span> No tienes itinerarios registrados en este apartado.
+            </div>
+          </div>
+
+          <div v-if="seccionActual === 'ia'" class="d-flex flex-column">
+            <div class="mb-3">
+              <h2 class="fs-4 fw-bold text-dark m-0">Asistente de Viajes Inteligente</h2>
+              <p class="text-muted small m-0">Pregúntame sobre destinos, horas de vuelo o presupuestos.</p>
+            </div>
+            
+            <div class="card border bg-light flex-grow-1 d-flex flex-column" style="min-height: 350px;">
+              <div class="card-body overflow-auto p-3 d-flex flex-column gap-3" style="height: 350px;">
+  
+            <div 
+              v-for="msg in mensajesChat" 
+              :key="msg.id" 
+              class="p-2 rounded shadow-sm mw-75"
+              :class="msg.sender === 'user' ? 'bg-primary text-white align-self-end' : 'bg-white text-dark border align-self-start'"
+              style="width: fit-content;"
+            >
+              <span class="d-block text-break">{{ msg.text }}</span>
+            </div>
+
+          </div>
+              
+              <div class="card-footer bg-white border-top p-2">
+                <div class="input-group">
+                  <input 
+                    v-model="nuevoMensaje" 
+                    type="text" 
+                    class="form-control"
+                    :placeholder="cargandoIA ? 'OrtFly IA está pensando...' : 'Ej: Quiero viajar 5 días con 1000 USD...'" 
+                    :disabled="cargandoIA"
+                    @keyup.enter="enviarMensaje"
+                  />
+                  <button class="btn btn-primary px-4" :disabled="cargandoIA" @click="enviarMensaje">
+                    {{ cargandoIA ? '...' : 'Enviar' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+    </div>
   </div>
 </template>
