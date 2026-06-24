@@ -661,3 +661,55 @@ body {
   font-weight: bold;
   cursor: pointer;
 }
+
+/* MODAL FORMULARIO ABM ADMIN */
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+@media (max-width: 480px) {
+  .admin-form-grid { grid-template-columns: 1fr; }
+}
+
+/* DETALLES Y ETIQUETAS DEL ADMIN */
+.badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.badge-activo {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-cancelado {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.admin-subtitle {
+  color: #64748b;
+}
+
+.admin-sync-text {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.admin-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.modal-container-admin {
+  max-width: 500px;
+}
