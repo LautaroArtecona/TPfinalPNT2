@@ -1,8 +1,9 @@
 <script setup>
 import { ref } from 'vue'
+import { VECTORSHIFT_URL, VECTORSHIFT_KEY } from '../config/api'
 
-const seccionActual = ref('viajes') // 'viajes' o 'ia'
-const filtroViajes = ref('activos') // 'activos' o 'pasados'
+const seccionActual = ref('viajes') 
+const filtroViajes = ref('activos') 
 
 const misViajes = ref([
   { id: 101, destino: 'Madrid', fecha: '2026-07-15', estado: 'activo', asiento: '12F' },
@@ -14,20 +15,50 @@ const mensajesChat = ref([
 ])
 
 const nuevoMensaje = ref('')
+const cargandoIA = ref(false) // Estado para deshabilitar el botón mientras la IA piensa
 
-const enviarMensaje = () => {
-  if (!nuevoMensaje.value) return
-  mensajesChat.value.push({ id: Date.now(), text: nuevoMensaje.value, sender: 'user' })
+const enviarMensaje = async () => {
+  if (!nuevoMensaje.value.trim() || cargandoIA.value) return
+  
+  const textoUsuario = nuevoMensaje.value
+  mensajesChat.value.push({ id: Date.now(), text: textoUsuario, sender: 'user' })
   nuevoMensaje.value = ''
   
-  // Simulación de respuesta IA
-  setTimeout(() => {
+  try {
+    cargandoIA.value = true
+    
+    const respuesta = await fetch(VECTORSHIFT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${VECTORSHIFT_KEY}`
+      },
+      body: JSON.stringify({
+        inputs: {
+          mensaje_usuario: textoUsuario
+        }
+      })
+    })
+
+    if (!respuesta.ok) throw new Error('Error al conectar con la IA')
+    
+    const resultado = await respuesta.json()
+    console.log('Respuesta cruda de VectorShift:', resultado) 
+
+    const respuestaTexto = resultado.outputs?.respuesta_ia || resultado.respuesta_ia || "Disculpa, no pude procesar tu solicitud.";
+
+    mensajesChat.value.push({ id: Date.now(), text: respuestaTexto, sender: 'ai' })
+
+  } catch (error) {
+    console.error(error)
     mensajesChat.value.push({ 
       id: Date.now(), 
-      text: "Entiendo. Analizando destinos según tu presupuesto y días disponibles...", 
+      text: "⚠️ Ocurrió un error al conectar con el servicio de IA. Por favor, intenta de nuevo.", 
       sender: 'ai' 
     })
-  }, 1000)
+  } finally {
+    cargandoIA.value = false
+  }
 }
 </script>
 
@@ -100,10 +131,13 @@ const enviarMensaje = () => {
             <input 
               v-model="nuevoMensaje" 
               type="text" 
-              placeholder="Ej: Quiero viajar 5 días con 1000 USD..." 
+              :placeholder="cargandoIA ? 'OrtFly IA está pensando...' : 'Ej: Quiero viajar 5 días con 1000 USD...'" 
+              :disabled="cargandoIA"
               @keyup.enter="enviarMensaje"
             />
-            <button class="btn-ai" @click="enviarMensaje">Enviar</button>
+            <button class="btn-ai" :disabled="cargandoIA" @click="enviarMensaje">
+              {{ cargandoIA ? '...' : 'Enviar' }}
+            </button>
           </div>
         </div>
       </div>

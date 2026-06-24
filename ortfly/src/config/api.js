@@ -1,2 +1,6 @@
-// src/config/api.js
-export const MOCKAPI_URL = 'https://6a3470f18248ee962fa56a47.mockapi.io/api/v1' 
+const KEY_ENV = import.meta.env;
+    
+
+export const MOCKAPI_URL = KEY_ENV.VITE_MOCKAPI_URL
+export const VECTORSHIFT_URL = KEY_ENV.VITE_VECTORSHIFT_URL
+export const VECTORSHIFT_KEY = KEY_ENV.VITE_VECTORSHIFT_KEY
