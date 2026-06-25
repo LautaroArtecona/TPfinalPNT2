@@ -112,12 +112,14 @@ const enviarMensaje = async () => {
                 >
                   <span>✨</span> Asistente IA
                 </button>
+                <button 
+                  class="btn btn-light text-secondary w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-medium transition"
+                  @click="router.push('/')"
+                >
+                  <span>🔍</span> Ver Vuelos
+                </button>
               </div>
             </div>
-
-            <button class="btn btn-outline-danger w-100 text-start d-flex align-items-center gap-2 px-3 py-2 mt-3" @click="manejarLogout">
-              <span>🚪</span> Cerrar Sesión
-            </button>
           </div>
         </div>
       </aside>

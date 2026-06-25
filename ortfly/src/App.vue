@@ -1,16 +1,18 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from './stores/auth'
 import LoginModal from './components/LoginModal.vue'
 import RegisterModal from './components/RegisterModal.vue'
 
 const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
 const menuAbierto = ref(false)
 const tieneScroll = ref(false)
 
 // Función que analiza la posición del scroll
 const manejarScroll = () => {
-  // Si el usuario bajó más de 75 píxeles, activamos la transparencia
   if (window.scrollY > 75) {
     tieneScroll.value = true
   } else {
@@ -56,6 +58,11 @@ const manejarLoginExitoso = (rol) => {
   }
 }
 
+const manejarLogout = () => {
+  authStore.logout() 
+  router.push('/')   
+}
+
 const saltarARegistro = () => {
   modalAbierto.value = false
   modalRegisterAbierto.value = true
@@ -69,18 +76,38 @@ const saltarALogin = () => {
 
 <template>
   <header class="header" :class="{ 'header-scrolled': tieneScroll }">
-    <div class="logo" @click="router.push('/')">
-       <span class="brand">OrtFly</span>
+    <div class="logo" @click="router.push('/')" style="cursor: pointer;">
+      <span class="brand">OrtFly</span>
     </div>
     
     <div class="nav-container">
-      <button class="btn-login" @click="toggleMenu">
-        Iniciar Sesión ▾
-      </button>
-      
-      <div v-if="menuAbierto" class="dropdown-menu">
-        <button @click="abrirLogin('cliente')">🔑 Entrar como Cliente</button>
-        <button @click="abrirLogin('admin')">🛠️ Entrar como Admin</button>
+      <div v-if="!authStore.estaLogueado" class="position-relative">
+        <button class="btn-login" @click="toggleMenu">
+          Iniciar Sesión ▾
+        </button>
+        
+        <div v-if="menuAbierto" class="dropdown-menu">
+          <button @click="abrirLogin('cliente')">🔑 Cliente</button>
+          <button @click="abrirLogin('admin')">🛠️ Admin</button>
+        </div>
+      </div>
+
+      <div v-else class="d-flex align-items-center gap-3">
+        <span class="text-white-50 small d-none d-md-inline" v-if="authStore.usuario">
+          Hola, {{ authStore.usuario.nombre.split(' ')[0] }}
+        </span>
+
+        <button 
+          v-if="authStore.rol !== 'admin' && route.path !== '/cliente'" 
+          class="btn btn-outline-light btn-sm px-3 py-2 fw-medium"
+          @click="router.push('/cliente')"
+        >
+          👤 Mi Perfil
+        </button>
+        
+        <button class="btn btn-outline-danger btn-sm px-3 py-2 fw-medium" @click="manejarLogout">
+          🚪 Cerrar Sesión
+        </button>
       </div>
     </div>
   </header>
