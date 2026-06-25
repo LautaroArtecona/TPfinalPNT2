@@ -1,9 +1,19 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { MOCKAPI_URL } from '../config/api' 
 
 const vuelos = ref([])
 const cargando = ref(true)
+
+// Estados para capturar la selección del buscador
+const origenSeleccionado = ref('Buenos Aires') // Por defecto
+const destinoSeleccionado = ref('')
+const fechaSeleccionada = ref('')
+
+// Estados "fijos" que solo cambian al hacer clic en "Buscar Vuelos"
+const filtroOrigenAplicado = ref('') //
+const filtroDestinoAplicado = ref('')
+const filtroFechaAplicada = ref('')
 
 const obtenerVuelos = async () => {
   try {
@@ -21,6 +31,65 @@ const obtenerVuelos = async () => {
     cargando.value = false
   }
 }
+// Mapeos dinámicos para extraer opciones reales sin repetidos desde MockAPI
+const listaOrigenesUnicos = computed(() => {
+  const origenes = vuelos.value.map(v => v.origen)
+  return [...new Set(origenes)] // Quita duplicados
+})
+
+// Genera los destinos únicos para el selector basándose en la base de datos completa
+const listaDestinosUnicos = computed(() => {
+  const destinos = vuelos.value.map(v => v.destino)
+  return [...new Set(destinos)]
+})
+
+// Se ejecuta únicamente al apretar el botón
+const aplicarBusqueda = () => {
+  filtroOrigenAplicado.value = origenSeleccionado.value
+  filtroDestinoAplicado.value = destinoSeleccionado.value
+  filtroFechaAplicada.value = fechaSeleccionada.value
+}
+
+// Resetea selectores y vuelve a mostrar todo
+const limpiarFiltros = () => {
+  origenSeleccionado.value = ''
+  destinoSeleccionado.value = ''
+  fechaSeleccionada.value = ''
+  filtroOrigenAplicado.value = ''
+  filtroDestinoAplicado.value = ''
+  filtroFechaAplicada.value = ''
+}
+
+// Filtra basándose estrictamente en los filtros aplicados
+const vuelosFiltrados = computed(() => {
+  // Si no hay ningún filtro aplicado, devolvemos todo de una
+  if (!filtroOrigenAplicado.value && !filtroDestinoAplicado.value && !filtroFechaAplicada.value) {
+    return vuelos.value
+  }
+
+  return vuelos.value.filter(vuelo => {
+    // Filtrado por Origen
+    const coincideOrigen = !filtroOrigenAplicado.value || 
+      vuelo.origen.toLowerCase() === filtroOrigenAplicado.value.toLowerCase()
+    
+    // Filtrado por Destino
+    const coincideDestino = !filtroDestinoAplicado.value || 
+      vuelo.destino.toLowerCase() === filtroDestinoAplicado.value.toLowerCase()
+    
+    // Filtrado por Fecha con tolerancia a formatos rotos
+    let coincideFecha = true
+    if (filtroFechaAplicada.value) {
+      try {
+        const fechaVueloFormateada = new Date(vuelo.fecha).toISOString().split('T')[0]
+        coincideFecha = fechaVueloFormateada === filtroFechaAplicada.value
+      } catch (e) {
+        coincideFecha = vuelo.fecha.includes(filtroFechaAplicada.value) || vuelo.fecha === filtroFechaAplicada.value
+      }
+    }
+
+    return coincideOrigen && coincideDestino && coincideFecha
+  })
+})
 
 onMounted(() => {
   obtenerVuelos()
@@ -75,21 +144,42 @@ onMounted(() => {
 
       <section class="card shadow-sm p-4 border-0 bg-white mb-5">
         <h3 class="fs-5 fw-bold mb-3 text-dark">Busca tu próximo destino</h3>
-        <form class="row g-3 align-items-end">
-          <div class="col-12 col-md-4">
+        
+        <form @submit.prevent="aplicarBusqueda" class="row g-3 align-items-end">
+          
+          <div class="col-12 col-md-3">
             <label class="form-label text-muted small fw-medium m-1">Origen</label>
-            <input type="text" class="form-control" value="Buenos Aires" disabled />
+            <select class="form-select" v-model="origenSeleccionado">
+              <option value="">✨ Todos los orígenes</option>
+              <option v-for="orig in listaOrigenesUnicos" :key="orig" :value="orig">
+                {{ orig }}
+              </option>
+            </select>
           </div>
-          <div class="col-12 col-md-4">
+          
+          <div class="col-12 col-md-3">
             <label class="form-label text-muted small fw-medium m-1">Destino</label>
-            <input type="text" class="form-control" placeholder="¿A dónde vas?" />
+            <select class="form-select" v-model="destinoSeleccionado">
+              <option value="">✨ Todos los destinos</option>
+              <option v-for="dest in listaDestinosUnicos" :key="dest" :value="dest">
+                {{ dest }}
+              </option>
+            </select>
           </div>
-          <div class="col-12 col-md-4">
-            <label class="form-label text-muted small fw-medium m-1">Fecha</label>
-            <input type="date" class="form-control" />
+          
+          <div class="col-12 col-md-3">
+            <label class="form-label text-muted small fw-medium m-1">Fecha de Viaje</label>
+            <input type="date" class="form-control" v-model="fechaSeleccionada" />
           </div>
-          <div class="col-12">
+
+          <div class="col-12 col-md-3">
             <button type="submit" class="btn btn-dark w-100 py-2 fw-medium">🔍 Buscar Vuelos</button>
+          </div>
+          
+          <div class="col-12 text-end mt-2" v-if="filtroOrigenAplicado || filtroDestinoAplicado || filtroFechaAplicada">
+            <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none" @click="limpiarFiltros">
+              Aviso: Filtros activos. Hacer clic aquí para restablecer la lista original.
+            </button>
           </div>
         </form>
       </section>
@@ -97,13 +187,13 @@ onMounted(() => {
       <section class="mb-4">
         <h2 class="fs-4 fw-bold text-dark mb-4">Vuelos Disponibles</h2>
         
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4" v-if="vuelosFiltrados.length > 0">
           
-          <div v-for="vuelo in vuelos" :key="vuelo.id" class="col">
+          <div v-for="vuelo in vuelosFiltrados" :key="vuelo.id" class="col">
             <div class="card h-100 border-0 shadow-sm overflow-hidden transition-hover">
               
               <div class="position-relative">
-                <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=600&auto=format&fit=crop" class="card-img-top object-fit-cover" style="height: 160px;" alt="Destino Itinerario">
+                <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=600&auto=format&fit=crop" class="card-img-top object-fit-cover" style="height: 160px;" alt="Destino">
                 <span class="position-absolute top-3 end-3 badge rounded-pill px-3 py-2" :class="vuelo.estado === 'Activo' ? 'bg-success text-white' : 'bg-secondary text-white'">
                   {{ vuelo.estado }}
                 </span>
@@ -122,7 +212,6 @@ onMounted(() => {
                       <small class="text-muted text-break">{{ vuelo.destino }}</small>
                     </div>
                   </div>
-
                   <div class="d-flex justify-content-between align-items-center pt-3 border-top mb-4">
                     <div class="d-flex align-items-center gap-1 text-muted small">
                       <span>📅</span>
@@ -131,14 +220,18 @@ onMounted(() => {
                     <span class="fs-5 fw-bold text-primary">USD ${{ vuelo.precio }}</span>
                   </div>
                 </div>
-
                 <button class="btn btn-primary w-100 py-2 fw-medium" :disabled="vuelo.estado !== 'Activo'">
                   {{ vuelo.estado === 'Activo' ? 'Seleccionar Vuelo' : 'Cancelado' }}
                 </button>
               </div>
+
             </div>
           </div>
 
+        </div>
+
+        <div v-else class="alert alert-light text-center py-5 border text-muted mt-3">
+          <span>✈️</span> No se encontraron vuelos disponibles que coincidan con la búsqueda.
         </div>
       </section>
 
