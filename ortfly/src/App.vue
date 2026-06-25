@@ -1,11 +1,30 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LoginModal from './components/LoginModal.vue'
 import RegisterModal from './components/RegisterModal.vue'
 
 const router = useRouter()
 const menuAbierto = ref(false)
+const tieneScroll = ref(false)
+
+// Función que analiza la posición del scroll
+const manejarScroll = () => {
+  // Si el usuario bajó más de 75 píxeles, activamos la transparencia
+  if (window.scrollY > 75) {
+    tieneScroll.value = true
+  } else {
+    tieneScroll.value = false
+  }
+}
+
+// Escuchamos el scroll
+onMounted(() => {
+  window.addEventListener('scroll', manejarScroll)
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', manejarScroll)
+})
 
 // Estados para controlar el modal
 const modalAbierto = ref(false)
@@ -49,9 +68,9 @@ const saltarALogin = () => {
 </script>
 
 <template>
-  <header class="header">
+  <header class="header" :class="{ 'header-scrolled': tieneScroll }">
     <div class="logo" @click="router.push('/')">
-      ✈️ <span class="brand">OrtFly</span>
+       <span class="brand">OrtFly</span>
     </div>
     
     <div class="nav-container">
@@ -66,7 +85,7 @@ const saltarALogin = () => {
     </div>
   </header>
 
-  <main class="main-content">
+  <main class="w-100 p-0 m-0" style="padding-top: 75px !important;">
     <RouterView />
   </main>
 

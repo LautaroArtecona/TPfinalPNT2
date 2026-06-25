@@ -41,7 +41,7 @@ const enviarMensaje = async () => {
   
   try {
     cargandoIA.value = true
-
+ 
     const respuesta = await fetch(VECTORSHIFT_URL, {
       method: 'POST',
       headers: {
